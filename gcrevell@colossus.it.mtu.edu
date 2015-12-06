@@ -1,0 +1,81 @@
+#define open_call	1
+#define close_call	2
+#define read_call	3
+#define write_call	4
+#define seek_call	5
+
+#include <sys/socket.h> 
+#include <sys/types.h>
+#include <arpa/inet.h> 
+#include <netinet/in.h>
+#include <strings.h>
+#include <netdb.h> 
+#include <stdlib.h>
+#include <stdio.h>
+
+
+int main(int agrc, char **argv) {
+	/*
+	 int sd;
+	 
+	 sd = socket(AF_INET, SOCK_STREAM, 0);
+	 
+	 if (sd < 0) {
+		// Could not create socket.
+		exit(sd);
+	 }
+	 
+	 struct sockaddr_in serv_addr;
+	 
+	 bzero((char *) &serv_addr, sizeof(serv_addr));
+	 
+	 serv_addr.sin_family = AF_INET;
+	 serv_addr.sin_addr.s_addr = INADDR_ANY;
+	 serv_addr.sin_port = 0;
+	 //strcpy(serv_addr.sun_path, "udgram");
+	 
+	 if (bind(sd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0) {
+		// Could not bind
+		exit(1);
+	 }
+	 
+	 socklen_t len = sizeof(serv_addr);
+	 getsockname(sd, (struct sockaddr *) &serv_addr, &len);
+	 
+	 printf("Port number %d\n", ntohs(serv_addr.sin_port));
+	 printf("host name %s\n", ntohs(serv_addr.sin_host));
+	 
+	 listen(sd, 5);
+	 
+	 struct sockaddr_in client_addr;
+	 int clilen = sizeof(client_addr);
+	 
+	 int newsockfd = accept(sd, (struct sockaddr *)&client_addr, &clilen);
+	 
+	 printf("Connected!\n");
+	 */
+	
+	
+	int listener, conn, length;
+	char ch;
+	struct sockaddr_in s1, s2 ;
+	
+	listener = socket( AF_INET, SOCK_STREAM, 0 );
+	bzero((char *) &s1, sizeof(s1));
+	s1.sin_family = ( short ) AF_INET;
+	s1.sin_addr.s_addr = htonl(INADDR_ANY);
+	
+	s1.sin_port = htons(0);
+	bind(listener, (struct sockaddr *)&s1, sizeof(s1));
+	length = sizeof(s1);
+	getsockname(listener, (struct sockaddr *)&s1, &length);
+	printf("RSTREAM:: assigned port number %d\n", ntohs ( s1.sin_port ) ) ;
+	
+	listen(listener ,1);
+	length = sizeof(s2);
+	conn=accept(listener, (struct sockaddr *)&s2, &length);
+	//printsin(&s2,"RSTREAM::", "accepted connection from");
+	printf("\n\nRSTREAM:: data from stream:\n");
+	while ( read(conn, &ch, 1) == 1) putchar(ch);
+	putchar ( '\n' );
+}
