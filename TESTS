@@ -1,0 +1,5 @@
+To test my program, I used 2 programs, rclient1 and rclient2. 1 copies a local file
+to a remote host and 2 copies a remote file to a local file. The default input file
+in both programs is in.txt and the output file is out.txt. Including a third 
+argument when launching the program will use that argument as the input file. I used
+these programs to copy a variety of files, both text and binary.

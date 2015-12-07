@@ -1,0 +1,4 @@
+All functions in the server currently work. The open, read, write, close, and seek
+methods all seem to be working correctly. The rclient* programs take an input
+file, called in.txt, either remote or local, and copies it to out.txt, on either
+the remote or local, the opposite of the origin.

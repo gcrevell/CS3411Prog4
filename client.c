@@ -8,7 +8,7 @@
 
 int sd = -5;
 
-int init(char* host, u_short port) {
+int init(char* host, int port) {
 	sd = socket(AF_INET , SOCK_STREAM , 0);
 	
 	struct sockaddr_in remote;
@@ -17,7 +17,7 @@ int init(char* host, u_short port) {
 	
 	struct hostent* h = gethostbyname(host);
 	
-	bcopy ((char *)h->h_addr, (char *)&remote.sin_addr, h->h_length) ;
+	bcopy ((char *)h->h_addr_list[0], (char *)&remote.sin_addr, h->h_length) ;
 	remote.sin_port = htons(port);
 	
 	if (connect(sd, (struct sockaddr *)&remote, sizeof(remote)) < 0) {
@@ -68,8 +68,6 @@ int r_open(const char* filename, int oflag, int mode) {
 	bcopy(msg, &out, sizeof(int));
 	bcopy(&msg[4], &outErr, sizeof(int));
 	
-	printf("client out = %d\n", out);
-	
 	errno = outErr;
 	
 	free(msg);
@@ -82,7 +80,7 @@ int r_close(int fd) {
 		return -2;
 	}
 	
-	char msg[8];	// Opcode plus fd
+	char msg[5];	// Opcode plus fd
 	
 	msg[0] = close_call;
 	bcopy(&fd, &msg[1], sizeof(fd));
@@ -108,7 +106,21 @@ int r_read(int fd, void *buf, int size) {
 		return -2;
 	}
 	
-	return 0;
+	char opcode = read_call;
+	write(sd, &opcode, 1);
+	
+	write(sd, (char *) &fd, sizeof(fd));
+	write(sd, (char *) &size, sizeof(size));
+	
+	read(sd, (char *) &size, sizeof(size));
+	
+	if (size > 0) {
+		read(sd, buf, size);
+	}
+	
+	read(sd, &errno, sizeof(errno));
+	
+	return size;
 }
 
 int r_write(int fd, const void *buf, int size) {
@@ -116,7 +128,24 @@ int r_write(int fd, const void *buf, int size) {
 		return -2;
 	}
 	
-	return 0;
+	char opcode = write_call;
+	write(sd, &opcode, 1);
+	
+	write(sd, (char *) &fd, sizeof(fd));
+	write(sd, (char *) &size, sizeof(size));
+	
+	write(sd, buf, size);
+	
+	// revieve responce and return
+	int out;
+	int outErr;
+	
+	read(sd, (char *) &out, sizeof(int));
+	read(sd, (char *) &outErr, sizeof(int));
+	
+	errno = outErr;
+	
+	return out;
 }
 
 int r_lseek(int fd, int offset, int whence) {
@@ -124,5 +153,21 @@ int r_lseek(int fd, int offset, int whence) {
 		return -2;
 	}
 	
-	return 0;
+	char opcode = seek_call;
+	write(sd, &opcode, 1);
+	
+	write(sd, (char *) &fd, sizeof(fd));
+	write(sd, (char *) &offset, sizeof(offset));
+	write(sd, (char *) &whence, sizeof(whence));
+	
+	// revieve responce and return
+	int out;
+	int outErr;
+	
+	read(sd, (char *) &out, sizeof(int));
+	read(sd, (char *) &outErr, sizeof(int));
+	
+	errno = outErr;
+	
+	return out;
 }
