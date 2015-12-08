@@ -1,3 +1,14 @@
+// -----------------------------------------------------------
+// NAME : Gabriel Revells                    User ID: gcrevell
+// DUE DATE : 12/11/2015
+// PROGRAM ASSIGNMENT #3
+// FILE NAME : client.h
+// PROGRAM PURPOSE :
+//    This file defines the API for client, which extents the
+//    standard system calls open, close, read, write, and
+//    seek across a socket.
+// -----------------------------------------------------------
+
 #ifndef client_h
 #define client_h
 
@@ -8,7 +19,7 @@
 #include <unistd.h>			// Read, write, lseek
 #include <stdlib.h>			// malloc
 #include <string.h>			// strcpy, strlen
-#include <strings.h>			// bzero, bcopy
+#include <strings.h>		// bzero, bcopy
 #include <stdio.h>			// printf
 #include <netinet/in.h>		// socket constants
 #include <sys/socket.h>		// accept

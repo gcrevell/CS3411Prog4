@@ -1,7 +1,27 @@
+// -----------------------------------------------------------
+// NAME : Gabriel Revells                    User ID: gcrevell
+// DUE DATE : 12/11/2015
+// PROGRAM ASSIGNMENT #3
+// FILE NAME : xxxx.yyyy.zzzz (your unix file name)
+// PROGRAM PURPOSE :
+//    A couple of lines describing your program briefly
+// -----------------------------------------------------------
+
 // Read from remote file, copy to local file.
 
 #include "client.h"
 
+// -----------------------------------------------------------
+// FUNCTION  main :
+//    The main function. Reads a remote file using client and
+//    writes it to a local file. Uses remote file in.txt unless
+//    a third argument is passed.
+// PARAMETER USAGE :
+//    int argc - The number of arguments.
+//    char **argv - The arguments.
+// RETURN VALUE :
+//    int Main return.
+// -----------------------------------------------------------
 int main(int argc, char **argv) {
 	if (argc < 3) {
 		// Not enough args

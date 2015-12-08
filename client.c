@@ -1,3 +1,14 @@
+// -----------------------------------------------------------
+// NAME : Gabriel Revells                    User ID: gcrevell
+// DUE DATE : 12/11/2015
+// PROGRAM ASSIGNMENT #3
+// FILE NAME : client.c
+// PROGRAM PURPOSE :
+//    This file defines the API for client, which extents the
+//    standard system calls open, close, read, write, and
+//    seek across a socket.
+// -----------------------------------------------------------
+
 #define open_call		1
 #define close_call		2
 #define read_call		3
@@ -8,6 +19,16 @@
 
 int sd = -5;
 
+// -----------------------------------------------------------
+// FUNCTION  init :
+//    This funciton is called to initialize the socket for
+//    communication.
+// PARAMETER USAGE :
+//    char* host - The hostname.
+//    int port - The port to communicate over.
+// RETURN VALUE :
+//    int 0 if successful, -1 if error
+// -----------------------------------------------------------
 int init(char* host, int port) {
 	sd = socket(AF_INET , SOCK_STREAM , 0);
 	
@@ -29,6 +50,18 @@ int init(char* host, int port) {
 	return 0;
 }
 
+// -----------------------------------------------------------
+// FUNCTION  r_open :
+//    Wrapper for the open call. Uses a socket to open on a
+//    remote server.
+// PARAMETER USAGE :
+//    const char* filename - The name of the file to open.
+//    int oflag - The flags to pass to open.
+//    int mode - The access mode to use if creating a file.
+// RETURN VALUE :
+//    int Upon success the opened file descriptor is returned.
+//    Negative otherwise.
+// -----------------------------------------------------------
 int r_open(const char* filename, int oflag, int mode) {
 	if (sd == -5) {
 		return -2;
@@ -57,10 +90,15 @@ int r_open(const char* filename, int oflag, int mode) {
 	size += sizeof(mode);
 	
 	// Write message to socket
-	write(sd, msg, size);
+	if (write(sd, msg, size) < 0) {
+		return -1;
+	}
 	
 	// revieve fd back and return
-	read(sd, msg, 8);
+	if (read(sd, msg, 8) <= 0) {
+
+		return -1;
+	}
 	
 	int out;
 	int outErr;
@@ -75,6 +113,15 @@ int r_open(const char* filename, int oflag, int mode) {
 	return out;
 }
 
+// -----------------------------------------------------------
+// FUNCTION  r_close :
+//    A wrapper function for the close system call. Closes a
+//    file on a remote server.
+// PARAMETER USAGE :
+//    int fd - The file descriptor to close.
+// RETURN VALUE :
+//    int Upon success, 0. Negative if error
+// -----------------------------------------------------------
 int r_close(int fd) {
 	if (sd == -5) {
 		return -2;
@@ -85,10 +132,14 @@ int r_close(int fd) {
 	msg[0] = close_call;
 	bcopy(&fd, &msg[1], sizeof(fd));
 	
-	write(sd, msg, 5);
+	if (write(sd, msg, 5) < 0) {
+		return -1;
+	}
 	
 	// revieve fd back and return
-	read(sd, msg, 8);
+	if (read(sd, msg, 8) <= 0) {
+		return -1;
+	}
 	
 	int out;
 	int outErr;
@@ -101,71 +152,139 @@ int r_close(int fd) {
 	return out;
 }
 
+// -----------------------------------------------------------
+// FUNCTION  r_read :
+//    Wrapper function for the read system call. Reads a string
+//    from a remote file.
+// PARAMETER USAGE :
+//    int fd - The file descriptor of the file to read.
+//    void *buf - The buffer to read values into.
+//    int size - The number of bytes to read
+// RETURN VALUE :
+//    int The number of values read, or negative if error
+// -----------------------------------------------------------
 int r_read(int fd, void *buf, int size) {
 	if (sd == -5) {
 		return -2;
 	}
 	
 	char opcode = read_call;
-	write(sd, &opcode, 1);
-	
-	write(sd, (char *) &fd, sizeof(fd));
-	write(sd, (char *) &size, sizeof(size));
-	
-	read(sd, (char *) &size, sizeof(size));
-	
-	if (size > 0) {
-		read(sd, buf, size);
+	if (write(sd, &opcode, 1) < 0) {
+		return -1;
 	}
 	
-	read(sd, &errno, sizeof(errno));
+	if (write(sd, (char *) &fd, sizeof(fd)) < 0) {
+		return -1;
+	}
+	if (write(sd, (char *) &size, sizeof(size)) < 0) {
+		return -1;
+	}
+	
+	if (read(sd, (char *) &size, sizeof(size)) <= 0) {
+		return -1;
+	}
+	
+	if (size > 0) {
+		if (read(sd, buf, size)  <= 0) {
+			return -1;
+		}
+	}
+	
+	if (read(sd, &errno, sizeof(errno)) <= 0) {
+		return -1;
+	}
 	
 	return size;
 }
 
+// -----------------------------------------------------------
+// FUNCTION  r_write :
+//    Wrapper function for write system call. Writes to a file
+//    across a socket.
+// PARAMETER USAGE :
+//    int fd - The file descriptor to write to.
+//    const void *buf - The string to write.
+//    int size - The number of bytes to write.
+// RETURN VALUE :
+//    int The number of bytes written, or negative if error.
+// -----------------------------------------------------------
 int r_write(int fd, const void *buf, int size) {
 	if (sd == -5) {
 		return -2;
 	}
 	
 	char opcode = write_call;
-	write(sd, &opcode, 1);
+	if (write(sd, &opcode, 1) < 0) {
+		return -1;
+	}
 	
-	write(sd, (char *) &fd, sizeof(fd));
-	write(sd, (char *) &size, sizeof(size));
+	if (write(sd, (char *) &fd, sizeof(fd)) < 0) {
+		return -1;
+	}
+	if (write(sd, (char *) &size, sizeof(size)) < 0) {
+		return -1;
+	}
 	
-	write(sd, buf, size);
+	if (write(sd, buf, size) < 0) {
+		return -1;
+	}
 	
 	// revieve responce and return
 	int out;
 	int outErr;
 	
-	read(sd, (char *) &out, sizeof(int));
-	read(sd, (char *) &outErr, sizeof(int));
+	if (read(sd, (char *) &out, sizeof(int)) <= 0) {
+		return -1;
+	}
+	if (read(sd, (char *) &outErr, sizeof(int)) <= 0) {
+		return -1;
+	}
 	
 	errno = outErr;
 	
 	return out;
 }
 
+// -----------------------------------------------------------
+// FUNCTION  r_lseek :
+//    Wrapper for lseek. Seeks a file over a socket.
+// PARAMETER USAGE :
+//    int fd - The file descriptor to seek.
+//    int offset - The amount to offset from.
+//    int whence - Where to offset from (SEEK_SET _CUR or _END)
+// RETURN VALUE :
+//    int The total offset of the file.
+// -----------------------------------------------------------
 int r_lseek(int fd, int offset, int whence) {
 	if (sd == -5) {
 		return -2;
 	}
 	
 	char opcode = seek_call;
-	write(sd, &opcode, 1);
+	if (write(sd, &opcode, 1) < 0) {
+		return -1;
+	}
 	
-	write(sd, (char *) &fd, sizeof(fd));
-	write(sd, (char *) &offset, sizeof(offset));
-	write(sd, (char *) &whence, sizeof(whence));
+	if (write(sd, (char *) &fd, sizeof(fd)) < 0) {
+		return -1;
+	}
+	if (write(sd, (char *) &offset, sizeof(offset)) < 0) {
+		return -1;
+	}
+	if (write(sd, (char *) &whence, sizeof(whence)) < 0) {
+		return -1;
+	}
 	
 	// revieve responce and return
 	int out;
 	int outErr;
 	
-	read(sd, (char *) &out, sizeof(int));
-	read(sd, (char *) &outErr, sizeof(int));
+	if (read(sd, (char *) &out, sizeof(int)) <= 0) {
+		return -1;
+	}
+	if (read(sd, (char *) &outErr, sizeof(int)) <= 0) {
+		return -1;
+	}
 	
 	errno = outErr;
 	

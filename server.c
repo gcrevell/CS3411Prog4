@@ -1,3 +1,16 @@
+// -----------------------------------------------------------
+// NAME : Gabriel Revells                    User ID: gcrevell
+// DUE DATE : 12/11/2015
+// PROGRAM ASSIGNMENT #3
+// FILE NAME : server.c
+// PROGRAM PURPOSE :
+//    This file is used as the server side of the server-client.
+//    It will create a socket then listen for connections on
+//    that socket. Upon accepting a socket, the program forks
+//    to allow a child process to handle the incoming connection
+//    while the parent waits for another connection.
+// -----------------------------------------------------------
+
 #define open_call		1
 #define close_call		2
 #define read_call		3
@@ -13,6 +26,19 @@
 #include <netinet/in.h>		// socket constants
 #include <stdlib.h>			// malloc, free
 
+// -----------------------------------------------------------
+// FUNCTION  main :
+//    This method runs the server side of the server-client.
+//    It will create a socket then listen for connections on
+//    that socket. Upon accepting a socket, the program forks
+//    to allow a child process to handle the incoming connection
+//    while the parent waits for another connection.
+// PARAMETER USAGE :
+//    int argc - The number of arguments.
+//    char **argv - The arguments.
+// RETURN VALUE :
+//    int The main return.
+// -----------------------------------------------------------
 int main(int agrc, char **argv) {
 	int listener, conn;
 	socklen_t length;
@@ -50,102 +76,146 @@ int main(int agrc, char **argv) {
 						int cnt = 0;
 						
 						do {
-							read(conn, &ch, 1);
+							if (read(conn, &ch, 1) <= 0) {
+								return -1;
+							}
 						} while ((filename[cnt++] = ch) != 0);
 						
 						int oflag;
 						int mode;
 						
-						read(conn, (char *) &oflag, sizeof(oflag));
-						read(conn, (char *) &mode, sizeof(mode));
+						if (read(conn, (char *) &oflag, sizeof(oflag)) <= 0) {
+							return -1;
+						}
+						if (read(conn, (char *) &mode, sizeof(mode)) <= 0) {
+							return -1;
+						}
 						
-						int fd = open(filename, oflag/* | O_CREAT*/, mode);
+						int fd = open(filename, oflag | O_CREAT, mode);
 						
 						char out[8];
 						
 						bcopy(&fd, out, sizeof(fd));
 						bcopy(&errno, &out[4], sizeof(errno));
 						
-						write(conn, out, 8);
+						if (write(conn, out, 8) < 0) {
+							return -1;
+						}
 					} else if (ch == close_call) {
 						// close file
 						int fd;
 						
-						read(conn, (char *) &fd, sizeof(fd));
+						if (read(conn, (char *) &fd, sizeof(fd)) <= 0) {
+							return -1;
+						}
 						
 						fd = close(fd);
 						
-						write(conn, (char *) &fd, sizeof(fd));
-						write(conn, (char *) &errno, sizeof(errno));
+						if (write(conn, (char *) &fd, sizeof(fd)) < 0) {
+							return -1;
+						}
+						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
+							return -1;
+						}
 					} else if (ch == read_call) {
 						// Read fd
 						int fd;
-						read(conn, (char *) &fd, sizeof(fd));
+						if (read(conn, (char *) &fd, sizeof(fd)) <= 0) {
+							return -1;
+						}
 						
 						// Read buffer size
 						int size;
-						read(conn, (char *) &size, sizeof(size));
+						if (read(conn, (char *) &size, sizeof(size)) <= 0) {
+							return -1;
+						}
 						
 						// Read max of that number of characters
 						char * buf = malloc(size);
 						int ret = read(fd, buf, size);
 						
 						// Write actual num of characters read
-						write(conn, (char *) &ret, sizeof(ret));
+						if (write(conn, (char *) &ret, sizeof(ret)) < 0) {
+							return -1;
+						}
 						
 						// Write characters read
 						if (ret > 0) {
-							write(conn, buf, ret);
+							if (write(conn, buf, ret) < 0) {
+								return -1;
+							}
 						}
 						
 						// Write errno
-						write(conn, (char *) &errno, sizeof(errno));
+						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
+							return -1;
+						}
 						
 						free(buf);
 					} else if (ch == write_call) {
 						// Read fd
 						int fd;
-						read(conn, (char *) &fd, sizeof(fd));
+						if (read(conn, (char *) &fd, sizeof(fd)) <= 0) {
+							return -1;
+						}
 						
 						// Read size of message
 						int size;
-						read(conn, (char *) &size, sizeof(size));
+						if (read(conn, (char *) &size, sizeof(size))  <= 0) {
+							return -1;
+						}
 						
 						// Read message
 						char * buf = malloc(size);
-						read(conn, buf, size);
+						if (read(conn, buf, size) <= 0) {
+							return -1;
+						}
 						
 						// Write message to fd
 						int ret = write(fd, buf, size);
 						
 						// Write responce from write
-						write(conn, (char *) &ret, sizeof(ret));
+						if (write(conn, (char *) &ret, sizeof(ret)) < 0) {
+							return -1;
+						}
 						
 						// Write errno
-						write(conn, (char *) &errno, sizeof(errno));
+						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
+							return -1;
+						}
 						
 						free(buf);
 					} else if (ch == seek_call) {
 						// Read fd
 						int fd;
-						read(conn, (char *) &fd, sizeof(fd));
+						if (read(conn, (char *) &fd, sizeof(fd)) <= 0) {
+							return -1;
+						}
 						
 						// Read offset int
 						int offset;
-						read(conn, (char *) &offset, sizeof(offset));
+						if (read(conn, (char *) &offset, sizeof(offset)) <= 0) {
+							return -1;
+						}
 						
 						// Read whence int
 						int whence;
-						read(conn, (char *) &whence, sizeof(whence));
+						if (read(conn, (char *) &whence, sizeof(whence)) <= 0) {
+							return -1;
+						}
 						
 						// Seek
 						int ret = lseek(fd, offset, whence);
 						
 						// Write responce from lseek
-						write(conn, (char *) &ret, sizeof(ret));
+						if (write(conn, (char *) &ret, sizeof(ret)) < 0) {
+							return -1;
+						}
 						
 						// Write errno
-						write(conn, (char *) &errno, sizeof(errno));
+						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
+							return -1;
+						}
 					} else {
 						printf("ERROR: An unknown opcode was recieved.");
 					}

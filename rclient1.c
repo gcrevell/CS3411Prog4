@@ -1,7 +1,27 @@
+// -----------------------------------------------------------
+// NAME : Gabriel Revells                    User ID: gcrevell
+// DUE DATE : 12/11/2015
+// PROGRAM ASSIGNMENT #3
+// FILE NAME : xxxx.yyyy.zzzz (your unix file name)
+// PROGRAM PURPOSE :
+//    A couple of lines describing your program briefly
+// -----------------------------------------------------------
+
 // Local file in, copy to remote file
 
 #include "client.h"
 
+// -----------------------------------------------------------
+// FUNCTION  main :
+//    The main function. Reads a local file and writes it to a
+//    remote file. Uses local file in.txt unless a third
+//    argument is passed.
+// PARAMETER USAGE :
+//    int argc - The number of arguments.
+//    char **argv - The arguments.
+// RETURN VALUE :
+//    int Main return.
+// -----------------------------------------------------------
 int main(int argc, char **argv) {
 	if (argc < 3) {
 		// Not enough args
@@ -15,7 +35,6 @@ int main(int argc, char **argv) {
 	int outFd;
 	if ((outFd = r_open("out.txt", O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
 		// Failed to open remote out
-		printf("outFd = %d\n", 0666);
 		char* buf = {"Failed to open the output file on the remote machine.\n"};
 		write(1, buf, strlen(buf));
 		exit(-2);
