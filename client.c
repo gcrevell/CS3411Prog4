@@ -83,6 +83,9 @@ int r_open(const char* filename, int oflag, int mode) {
 	size += strlen(filename);
 	msg[size++] = 0;
 	
+	oflag = htonl(oflag);
+	mode = htonl(mode);
+	
 	bcopy(&oflag, &msg[size], sizeof(oflag));
 	size += sizeof(oflag);
 	
@@ -106,11 +109,11 @@ int r_open(const char* filename, int oflag, int mode) {
 	bcopy(msg, &out, sizeof(int));
 	bcopy(&msg[4], &outErr, sizeof(int));
 	
-	errno = outErr;
+	errno = ntohl(outErr);
 	
 	free(msg);
 	
-	return out;
+	return ntohl(out);
 }
 
 // -----------------------------------------------------------
@@ -128,6 +131,8 @@ int r_close(int fd) {
 	}
 	
 	char msg[5];	// Opcode plus fd
+	
+	fd = htonl(fd);
 	
 	msg[0] = close_call;
 	bcopy(&fd, &msg[1], sizeof(fd));
@@ -147,9 +152,9 @@ int r_close(int fd) {
 	bcopy(msg, &out, sizeof(int));
 	bcopy(&msg[4], &outErr, sizeof(int));
 	
-	errno = outErr;
+	errno = ntohl(outErr);
 	
-	return out;
+	return ntohl(out);
 }
 
 // -----------------------------------------------------------
@@ -173,9 +178,11 @@ int r_read(int fd, void *buf, int size) {
 		return -1;
 	}
 	
+	fd = htonl(fd);
 	if (write(sd, (char *) &fd, sizeof(fd)) < 0) {
 		return -1;
 	}
+	size = htonl(size);
 	if (write(sd, (char *) &size, sizeof(size)) < 0) {
 		return -1;
 	}
@@ -183,6 +190,7 @@ int r_read(int fd, void *buf, int size) {
 	if (read(sd, (char *) &size, sizeof(size)) <= 0) {
 		return -1;
 	}
+	size = ntohl(size);
 	
 	if (size > 0) {
 		if (read(sd, buf, size)  <= 0) {
@@ -190,9 +198,12 @@ int r_read(int fd, void *buf, int size) {
 		}
 	}
 	
-	if (read(sd, &errno, sizeof(errno)) <= 0) {
+	int err;
+	if (read(sd, &err, sizeof(errno)) <= 0) {
 		return -1;
 	}
+	
+	errno = ntohl(err);
 	
 	return size;
 }
@@ -218,10 +229,13 @@ int r_write(int fd, const void *buf, int size) {
 		return -1;
 	}
 	
+	fd = htonl(fd);
 	if (write(sd, (char *) &fd, sizeof(fd)) < 0) {
 		return -1;
 	}
-	if (write(sd, (char *) &size, sizeof(size)) < 0) {
+	
+	int size2 = htonl(size);
+	if (write(sd, (char *) &size2, sizeof(size)) < 0) {
 		return -1;
 	}
 	
@@ -240,9 +254,9 @@ int r_write(int fd, const void *buf, int size) {
 		return -1;
 	}
 	
-	errno = outErr;
+	errno = ntohl(outErr);
 	
-	return out;
+	return ntohl(out);
 }
 
 // -----------------------------------------------------------
@@ -265,12 +279,15 @@ int r_lseek(int fd, int offset, int whence) {
 		return -1;
 	}
 	
+	fd = htonl(fd);
 	if (write(sd, (char *) &fd, sizeof(fd)) < 0) {
 		return -1;
 	}
+	offset = htonl(offset);
 	if (write(sd, (char *) &offset, sizeof(offset)) < 0) {
 		return -1;
 	}
+	whence = htonl(whence);
 	if (write(sd, (char *) &whence, sizeof(whence)) < 0) {
 		return -1;
 	}
@@ -286,7 +303,7 @@ int r_lseek(int fd, int offset, int whence) {
 		return -1;
 	}
 	
-	errno = outErr;
+	errno = ntohl(outErr);
 	
-	return out;
+	return ntohl(out);
 }

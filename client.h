@@ -25,6 +25,7 @@
 #include <sys/socket.h>		// accept
 #include <netdb.h>			// getsockname
 #include <errno.h>
+#include <arpa/inet.h>
 
 int init(char* host, int port);
 int r_open(const char* filename, int oflag, int mode);

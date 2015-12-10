@@ -25,6 +25,7 @@
 #include <sys/socket.h>		// accept
 #include <netinet/in.h>		// socket constants
 #include <stdlib.h>			// malloc, free
+#include <arpa/inet.h>
 
 // -----------------------------------------------------------
 // FUNCTION  main :
@@ -91,9 +92,15 @@ int main(int agrc, char **argv) {
 							return -1;
 						}
 						
+						oflag = ntohl(oflag);
+						mode = ntohl(mode);
+						
 						int fd = open(filename, oflag | O_CREAT, mode);
 						
 						char out[8];
+						
+						fd = htonl(fd);
+						errno = htonl(errno);
 						
 						bcopy(&fd, out, sizeof(fd));
 						bcopy(&errno, &out[4], sizeof(errno));
@@ -109,7 +116,8 @@ int main(int agrc, char **argv) {
 							return -1;
 						}
 						
-						fd = close(fd);
+						fd = htonl(close(ntohl(fd)));
+						errno = htonl(errno);
 						
 						if (write(conn, (char *) &fd, sizeof(fd)) < 0) {
 							return -1;
@@ -124,15 +132,18 @@ int main(int agrc, char **argv) {
 							return -1;
 						}
 						
+						fd = ntohl(fd);
+						
 						// Read buffer size
 						int size;
 						if (read(conn, (char *) &size, sizeof(size)) <= 0) {
 							return -1;
 						}
+						size = ntohl(size);
 						
 						// Read max of that number of characters
 						char * buf = malloc(size);
-						int ret = read(fd, buf, size);
+						int ret = htonl(read(fd, buf, size));
 						
 						// Write actual num of characters read
 						if (write(conn, (char *) &ret, sizeof(ret)) < 0) {
@@ -146,6 +157,7 @@ int main(int agrc, char **argv) {
 							}
 						}
 						
+						errno = htonl(errno);
 						// Write errno
 						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
 							return -1;
@@ -158,12 +170,14 @@ int main(int agrc, char **argv) {
 						if (read(conn, (char *) &fd, sizeof(fd)) <= 0) {
 							return -1;
 						}
+						fd = ntohl(fd);
 						
 						// Read size of message
 						int size;
 						if (read(conn, (char *) &size, sizeof(size))  <= 0) {
 							return -1;
 						}
+						size = ntohl(size);
 						
 						// Read message
 						char * buf = malloc(size);
@@ -172,7 +186,7 @@ int main(int agrc, char **argv) {
 						}
 						
 						// Write message to fd
-						int ret = write(fd, buf, size);
+						int ret = htonl(write(fd, buf, size));
 						
 						// Write responce from write
 						if (write(conn, (char *) &ret, sizeof(ret)) < 0) {
@@ -180,6 +194,7 @@ int main(int agrc, char **argv) {
 						}
 						
 						// Write errno
+						errno = htonl(errno);
 						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
 							return -1;
 						}
@@ -191,21 +206,24 @@ int main(int agrc, char **argv) {
 						if (read(conn, (char *) &fd, sizeof(fd)) <= 0) {
 							return -1;
 						}
+						fd = ntohl(fd);
 						
 						// Read offset int
 						int offset;
 						if (read(conn, (char *) &offset, sizeof(offset)) <= 0) {
 							return -1;
 						}
+						offset = ntohl(offset);
 						
 						// Read whence int
 						int whence;
 						if (read(conn, (char *) &whence, sizeof(whence)) <= 0) {
 							return -1;
 						}
+						whence = ntohl(whence);
 						
 						// Seek
-						int ret = lseek(fd, offset, whence);
+						int ret = htonl(lseek(fd, offset, whence));
 						
 						// Write responce from lseek
 						if (write(conn, (char *) &ret, sizeof(ret)) < 0) {
@@ -213,6 +231,7 @@ int main(int agrc, char **argv) {
 						}
 						
 						// Write errno
+						errno = htonl(errno);
 						if (write(conn, (char *) &errno, sizeof(errno)) < 0) {
 							return -1;
 						}
